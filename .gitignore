@@ -30,3 +30,10 @@
 *.exe
 *.out
 *.app
+
+# Manual build folder
+build
+
+# Idea IDE specific
+.idea/
+cmake-build-*/

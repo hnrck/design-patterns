@@ -1,3 +1,4 @@
+#include <ios>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -6,14 +7,16 @@
 
 using std::cout;
 using std::endl;
+using std::ios_base;
 using std::make_shared;
 using std::make_unique;
 using std::move;
 using std::ostream;
+using std::pair;
 using std::shared_ptr;
+using std::static_pointer_cast;
 using std::string;
 using std::stringstream;
-using std::pair;
 using std::unique_ptr;
 using std::vector;
 
@@ -33,7 +36,7 @@ struct ConfAttribute {
 
 class Stuff final {
 private:
-  stringstream ss_;
+  stringstream ss_{ios_base::in | ios_base::out};
 
 public:
   explicit Stuff(const string &s) { ss_ << this << " " << s << ": "; }
@@ -45,9 +48,8 @@ public:
   void setX(const string &xs1, const string &xs2) { ss_ << "X( " << xs1 << ": " << xs2 << " ) "; }
   void setY(const string &ys1, const string &ys2) { ss_ << "Y( " << ys1 << ": " << ys2 << " ) "; }
   void setZ(const string &zs1, const string &zs2) { ss_ << "Z( " << zs1 << ": " << zs2 << " ) "; }
-  friend ostream &operator<<(ostream &os, const Stuff &stuff) {
-    os << stuff.ss_.str();
-    return (os);
+  string str() const {
+    return ss_.str();
   }
 };
 
@@ -112,14 +114,17 @@ int main() {
 
   {
     auto v_bc = vector<pair<const SpBuilder, vector<ConfAttribute>>>{
-      pair<const SpBuilder, vector<ConfAttribute>>(static_cast<SpBuilder>(make_shared<ABuilder>()), vector<ConfAttribute>()),
-      pair<const SpBuilder, vector<ConfAttribute>>(static_cast<SpBuilder>(make_shared<BBuilder>()), vector<ConfAttribute>()),
+        pair<const SpBuilder, vector<ConfAttribute>>(
+            static_pointer_cast<Builder>(make_shared<ABuilder>()),
+            vector<ConfAttribute>()),
+        pair<const SpBuilder, vector<ConfAttribute>>(
+            static_pointer_cast<Builder>(make_shared<BBuilder>()),
+            vector<ConfAttribute>()),
     };
     auto &bc_a = v_bc[0];
     auto &bc_b = v_bc[1];
 
     auto r = Reader();
-
 
     cout << "setting A conf" << endl;
     bc_a.second.push_back({ConfType::X, "Xa"});
@@ -132,21 +137,21 @@ int main() {
     bc_b.second.push_back({ConfType::Z, "Zb2"});
 
     cout << "building confs" << endl;
-    for (const auto &bc: v_bc) {
+    for (const auto &bc : v_bc) {
       const auto &sp_b = bc.first;
       const auto &conf = bc.second;
 
       r.set_builder(sp_b);
       r.construct(conf);
 
-      v_up_s.push_back(move(sp_b->get()));
+      v_up_s.push_back(sp_b->get());
     }
     cout << endl;
   }
 
   cout << "stuffs:" << endl;
-  for (const auto &up_s: v_up_s) {
-    cout << *up_s << endl;
+  for (const auto &up_s : v_up_s) {
+    cout << up_s->str() << endl;
   }
 
   return 0;

@@ -30,22 +30,22 @@ int A::total_ = 0;
 
 class A11 final : public A {
 public:
-  void get_id() override { cout << "A11 id: " << id_ << endl; }
+  void get_id() override { cout << this << " A11 id: " << id_ << endl; }
 };
 
 class A12 final : public A {
 public:
-  void get_id() override { cout << "A12 id: " << id_ << endl; }
+  void get_id() override { cout << this << " A12 id: " << id_ << endl; }
 };
 
 class A21 final : public A {
 public:
-  void get_id() override { cout << "A21 id: " << id_ << endl; }
+  void get_id() override { cout << this << " A21 id: " << id_ << endl; }
 };
 
 class A22 final : public A {
 public:
-  void get_id() override { cout << "A22 id: " << id_ << endl; }
+  void get_id() override { cout << this << " A22 id: " << id_ << endl; }
 };
 
 class Factory {

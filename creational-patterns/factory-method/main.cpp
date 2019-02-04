@@ -7,6 +7,8 @@ using std::endl;
 using std::unique_ptr;
 using std::vector;
 
+using UpA = unique_ptr<class A>;
+
 class A {
 protected:
   int id_;
@@ -23,8 +25,6 @@ public:
 };
 
 int A::total_ = 0;
-
-using UpA = unique_ptr<A>;
 
 class A1 final : public A {
 private:

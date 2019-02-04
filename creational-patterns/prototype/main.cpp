@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+using std::allocator;
 using std::cout;
 using std::endl;
 using std::make_unique;
@@ -11,12 +12,14 @@ using std::to_string;
 using std::unique_ptr;
 using std::vector;
 
+using UpA = unique_ptr<class A>;
+
 class A final {
 private:
   string a1_;
   string a2_;
   string a3_;
-  static unique_ptr<A> up_clone_;
+  static UpA up_clone_;
 
   A(const A &) = default;
 
@@ -27,9 +30,9 @@ public:
   A(A &&) = delete;
   void operator=(A &&) = delete;
 
-  static void set_clone(unique_ptr<A> up_a) { up_clone_ = move(up_a); }
+  static void set_clone(UpA up_a) { up_clone_ = move(up_a); }
 
-  static unique_ptr<A> clone() { return (unique_ptr<A>(new A(*up_clone_))); }
+  static unique_ptr<A> clone() { return (UpA(new A(*up_clone_))); }
 
   void set_a1(const string &a1) { a1_ = a1; }
   void set_a2(const string &a2) { a2_ = a2; }
@@ -38,9 +41,7 @@ public:
   void print() const { cout << this << " a1: " << a1_ << ", a2: " << a2_ << ", a3: " << a3_ << endl; }
 };
 
-using UpA = unique_ptr<A>;
-
-UpA A::up_clone_;
+UpA A::up_clone_ = nullptr;
 
 int main() {
   {
@@ -48,9 +49,9 @@ int main() {
     auto up_proto = make_unique<A>();
 
     cout << "setting future prototype" << endl;
-    up_proto->set_a1("toto");
-    up_proto->set_a2("tata");
-    up_proto->set_a3("titi");
+    up_proto->set_a1(string("toto", allocator<char>()));
+    up_proto->set_a2(string("tata", allocator<char>()));
+    up_proto->set_a3(string("titi", allocator<char>()));
 
     cout << "future prototype:" << endl;
     up_proto->print();

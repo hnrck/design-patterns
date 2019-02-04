@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+using std::allocator;
 using std::cout;
 using std::endl;
 using std::ios_base;
@@ -17,6 +18,7 @@ using std::shared_ptr;
 using std::static_pointer_cast;
 using std::string;
 using std::stringstream;
+using std::to_string;
 using std::unique_ptr;
 using std::vector;
 
@@ -48,17 +50,17 @@ public:
   void setX(const string &xs1, const string &xs2) { ss_ << "X( " << xs1 << ": " << xs2 << " ) "; }
   void setY(const string &ys1, const string &ys2) { ss_ << "Y( " << ys1 << ": " << ys2 << " ) "; }
   void setZ(const string &zs1, const string &zs2) { ss_ << "Z( " << zs1 << ": " << zs2 << " ) "; }
-  string str() const {
-    return ss_.str();
-  }
+  string str() const { return ss_.str(); }
 };
 
 class Builder {
 protected:
+  const string name_;
+  unsigned int counter_{0};
   UpStuff up_stuff_;
 
 public:
-  Builder() = default;
+  Builder(string name, UpStuff up_stuff) : name_{move(name)}, up_stuff_{move(up_stuff)} {}
   virtual ~Builder() = default;
   Builder(const Builder &) = delete;
   Builder(Builder &&) = delete;
@@ -71,19 +73,20 @@ public:
 };
 
 class ABuilder final : public Builder {
+private:
 public:
-  ABuilder() { up_stuff_ = make_unique<Stuff>("Stuff A"); }
-  void confX(const string &xs) override { up_stuff_->setX("A", xs); };
-  void confY(const string &ys) override { up_stuff_->setY("A", ys); };
-  void confZ(const string &zs) override { up_stuff_->setZ("A", zs); };
+  ABuilder() : Builder{string("A", allocator<char>()), make_unique<Stuff>("Stuff A")} {}
+  void confX(const string &xs) override { up_stuff_->setX(name_ + to_string(counter_++), xs); };
+  void confY(const string &ys) override { up_stuff_->setY(name_ + to_string(counter_++), ys); };
+  void confZ(const string &zs) override { up_stuff_->setZ(name_ + to_string(counter_++), zs); };
 };
 
 class BBuilder final : public Builder {
 public:
-  BBuilder() { up_stuff_ = make_unique<Stuff>("Stuff B"); }
-  void confX(const string &xs) override { up_stuff_->setX("B", xs); };
-  void confY(const string &ys) override { up_stuff_->setY("B", ys); };
-  void confZ(const string &zs) override { up_stuff_->setZ("B", zs); };
+  BBuilder() : Builder{string("B", allocator<char>()), make_unique<Stuff>("Stuff B")} {}
+  void confX(const string &xs) override { up_stuff_->setX(name_ + to_string(counter_++), xs); };
+  void confY(const string &ys) override { up_stuff_->setY(name_ + to_string(counter_++), ys); };
+  void confZ(const string &zs) override { up_stuff_->setZ(name_ + to_string(counter_++), zs); };
 };
 
 class Reader final {
@@ -113,28 +116,29 @@ int main() {
   auto v_up_s = vector<UpStuff>();
 
   {
-    auto v_bc = vector<pair<const SpBuilder, vector<ConfAttribute>>>{
-        pair<const SpBuilder, vector<ConfAttribute>>(
-            static_pointer_cast<Builder>(make_shared<ABuilder>()),
-            vector<ConfAttribute>()),
-        pair<const SpBuilder, vector<ConfAttribute>>(
-            static_pointer_cast<Builder>(make_shared<BBuilder>()),
-            vector<ConfAttribute>()),
-    };
+    auto v_bc = vector<pair<const SpBuilder, vector<ConfAttribute>>>(
+        {
+            pair<const SpBuilder, vector<ConfAttribute>>(static_pointer_cast<Builder>(make_shared<ABuilder>()),
+                                                         vector<ConfAttribute>()),
+            pair<const SpBuilder, vector<ConfAttribute>>(static_pointer_cast<Builder>(make_shared<BBuilder>()),
+                                                         vector<ConfAttribute>()),
+        },
+        allocator<pair<const SpBuilder, vector<ConfAttribute>>>());
+
     auto &bc_a = v_bc[0];
     auto &bc_b = v_bc[1];
 
     auto r = Reader();
 
     cout << "setting A conf" << endl;
-    bc_a.second.push_back({ConfType::X, "Xa"});
-    bc_a.second.push_back({ConfType::Y, "Ya"});
-    bc_a.second.push_back({ConfType::Z, "Za"});
+    bc_a.second.push_back({ConfType::X, string("Xa", allocator<char>())});
+    bc_a.second.push_back({ConfType::Y, string("Ya", allocator<char>())});
+    bc_a.second.push_back({ConfType::Z, string("Za", allocator<char>())});
 
     cout << "setting B conf" << endl;
-    bc_b.second.push_back({ConfType::X, "Xb"});
-    bc_b.second.push_back({ConfType::Z, "Zb1"});
-    bc_b.second.push_back({ConfType::Z, "Zb2"});
+    bc_b.second.push_back({ConfType::X, string("Xb", allocator<char>())});
+    bc_b.second.push_back({ConfType::Z, string("Zb1", allocator<char>())});
+    bc_b.second.push_back({ConfType::Z, string("Zb2", allocator<char>())});
 
     cout << "building confs" << endl;
     for (const auto &bc : v_bc) {
